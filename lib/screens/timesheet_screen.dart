@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../widgets/app_drawer.dart';
+import '../services/firestore_service.dart';
 
 class TimesheetScreen extends StatefulWidget {
   @override
@@ -9,6 +11,7 @@ class TimesheetScreen extends StatefulWidget {
 }
 
 class _TimesheetScreenState extends State<TimesheetScreen> {
+  final FirestoreService _firestoreService = FirestoreService();
   CalendarFormat _calendarFormat = CalendarFormat.twoWeeks;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
@@ -22,8 +25,51 @@ class _TimesheetScreenState extends State<TimesheetScreen> {
   void initState() {
     super.initState();
     _selectedDay = _focusedDay;
-    _events[DateTime(_focusedDay.year, _focusedDay.month, _focusedDay.day)] =
-        [];
+    _loadEvents(_selectedDay!);
+  }
+
+  void _loadEvents(DateTime day) {
+    _firestoreService.getTimeEntriesForDay(day).listen((snapshot) {
+      final List<TimeEntry> dayEvents = snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return TimeEntry(
+          type: data['type'] == 'clockIn'
+              ? TimeEntryType.clockIn
+              : TimeEntryType.clockOut,
+          timestamp: (data['timestamp'] as Timestamp).toDate(),
+        );
+      }).toList();
+
+      setState(() {
+        _events[DateTime(day.year, day.month, day.day)] = dayEvents;
+        _updateClockState(dayEvents);
+      });
+    });
+  }
+
+  void _updateClockState(List<TimeEntry> events) {
+    _hasClockIn = false;
+    _hasClockOut = false;
+    _clockInTime = null;
+    _clockOutTime = null;
+
+    for (var event in events) {
+      if (event.type == TimeEntryType.clockIn) {
+        _clockInTime = event.timestamp;
+        _hasClockIn = true;
+      } else if (event.type == TimeEntryType.clockOut) {
+        _clockOutTime = event.timestamp;
+        _hasClockOut = true;
+      }
+    }
+
+    // Reset clock out if there's a clock in after the last clock out
+    if (_clockInTime != null &&
+        _clockOutTime != null &&
+        _clockInTime!.isAfter(_clockOutTime!)) {
+      _hasClockOut = false;
+      _clockOutTime = null;
+    }
   }
 
   List<TimeEntry> _getEventsForDay(DateTime day) {
@@ -36,26 +82,8 @@ class _TimesheetScreenState extends State<TimesheetScreen> {
       setState(() {
         _selectedDay = selectedDay;
         _focusedDay = focusedDay;
-        // Reset clock in/out state when changing days
-        if (!isSameDay(selectedDay, DateTime.now())) {
-          _clockInTime = null;
-          _clockOutTime = null;
-          _hasClockIn = false;
-          _hasClockOut = false;
-        } else {
-          // Check if there are existing clock events for today
-          final todayEvents = _getEventsForDay(selectedDay);
-          for (var event in todayEvents) {
-            if (event.type == TimeEntryType.clockIn) {
-              _clockInTime = event.timestamp;
-              _hasClockIn = true;
-            } else if (event.type == TimeEntryType.clockOut) {
-              _clockOutTime = event.timestamp;
-              _hasClockOut = true;
-            }
-          }
-        }
       });
+      _loadEvents(selectedDay);
     }
   }
 
@@ -69,29 +97,14 @@ class _TimesheetScreenState extends State<TimesheetScreen> {
     return '--:--';
   }
 
-  void _addTimeEntry(TimeEntryType type) {
+  void _addTimeEntry(TimeEntryType type) async {
     final now = DateTime.now();
-    final entry = TimeEntry(
-      type: type,
-      timestamp: now,
+    await _firestoreService.saveTimeEntry(
+      _selectedDay!,
+      type == TimeEntryType.clockIn ? 'clockIn' : 'clockOut',
+      now,
     );
-
-    setState(() {
-      final normalizedDay =
-          DateTime(_selectedDay!.year, _selectedDay!.month, _selectedDay!.day);
-      if (!_events.containsKey(normalizedDay)) {
-        _events[normalizedDay] = [];
-      }
-      _events[normalizedDay]!.add(entry);
-
-      if (type == TimeEntryType.clockIn) {
-        _clockInTime = now;
-        _hasClockIn = true;
-      } else if (type == TimeEntryType.clockOut) {
-        _clockOutTime = now;
-        _hasClockOut = true;
-      }
-    });
+    _loadEvents(_selectedDay!);
   }
 
   bool _isDateSelectable(DateTime day) {
@@ -159,9 +172,29 @@ class _TimesheetScreenState extends State<TimesheetScreen> {
               ),
             ),
           Expanded(
-            child: ValueListenableBuilder<List<TimeEntry>>(
-              valueListenable: ValueNotifier(_getEventsForDay(_selectedDay!)),
-              builder: (context, events, _) {
+            child: StreamBuilder<QuerySnapshot>(
+              stream: _firestoreService.getTimeEntriesForDay(_selectedDay!),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                }
+
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return Center(child: Text('No entries for this day.'));
+                }
+
+                final events = snapshot.data!.docs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return TimeEntry(
+                    type: data['type'] == 'clockIn'
+                        ? TimeEntryType.clockIn
+                        : TimeEntryType.clockOut,
+                    timestamp: (data['timestamp'] as Timestamp).toDate(),
+                  );
+                }).toList();
+
+                events.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
                 return ListView.builder(
                   itemCount: events.length,
                   itemBuilder: (context, index) {
@@ -197,9 +230,10 @@ class _TimesheetScreenState extends State<TimesheetScreen> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8.0),
                       child: ElevatedButton(
-                        onPressed: _hasClockIn
-                            ? null
-                            : () => _addTimeEntry(TimeEntryType.clockIn),
+                        onPressed:
+                            (_hasClockIn && !_hasClockOut) || _hasClockOut
+                                ? null
+                                : () => _addTimeEntry(TimeEntryType.clockIn),
                         style: ElevatedButton.styleFrom(
                           padding: EdgeInsets.symmetric(vertical: 16.0),
                           shape: RoundedRectangleBorder(
@@ -214,9 +248,9 @@ class _TimesheetScreenState extends State<TimesheetScreen> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8.0),
                       child: ElevatedButton(
-                        onPressed: !_hasClockIn || _hasClockOut
-                            ? null
-                            : () => _addTimeEntry(TimeEntryType.clockOut),
+                        onPressed: _hasClockIn && !_hasClockOut
+                            ? () => _addTimeEntry(TimeEntryType.clockOut)
+                            : null,
                         style: ElevatedButton.styleFrom(
                           padding: EdgeInsets.symmetric(vertical: 16.0),
                           shape: RoundedRectangleBorder(
@@ -231,12 +265,6 @@ class _TimesheetScreenState extends State<TimesheetScreen> {
               ),
             ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Implement add action
-        },
-        child: Icon(Icons.add),
       ),
     );
   }
