@@ -18,7 +18,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         );
         emit(Authenticated(userCredential.user!.uid));
       } on FirebaseAuthException catch (e) {
-        emit(AuthError(e.message ?? 'An error occurred during login'));
+        emit(AuthError(_getErrorMessage(e)));
+      } catch (e) {
+        emit(AuthError('An unexpected error occurred. Please try again.'));
       }
     });
 
@@ -32,7 +34,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         );
         emit(Authenticated(userCredential.user!.uid));
       } on FirebaseAuthException catch (e) {
-        emit(AuthError(e.message ?? 'An error occurred during sign up'));
+        emit(AuthError(_getErrorMessage(e)));
+      } catch (e) {
+        emit(AuthError('An unexpected error occurred. Please try again.'));
       }
     });
 
@@ -42,8 +46,29 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         await _auth.signOut();
         emit(Unauthenticated());
       } catch (e) {
-        emit(AuthError('An error occurred during logout'));
+        emit(AuthError('Failed to log out. Please try again.'));
       }
     });
+  }
+
+  String _getErrorMessage(FirebaseAuthException exception) {
+    switch (exception.code) {
+      case 'user-not-found':
+        return 'No user found with this email. Please check your email or sign up.';
+      case 'wrong-password':
+        return 'Incorrect password. Please try again or reset your password.';
+      case 'invalid-email':
+        return 'The email address is not valid. Please enter a valid email.';
+      case 'user-disabled':
+        return 'This account has been disabled. Please contact support.';
+      case 'email-already-in-use':
+        return 'An account already exists for this email. Please log in or use a different email.';
+      case 'weak-password':
+        return 'The password is too weak. Please use a stronger password.';
+      case 'operation-not-allowed':
+        return 'This operation is not allowed. Please contact support.';
+      default:
+        return 'An error occurred: ${exception.message}';
+    }
   }
 }
