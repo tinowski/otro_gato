@@ -1,0 +1,100 @@
+# --------------------------------------
+# OS / Editor / IDE
+# --------------------------------------
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+
+# Linux
+*.swp
+.swo
+
+# JetBrains / IntelliJ / Android Studio
+.idea/
+*.iml
+*.ipr
+*.iws
+*.bek
+
+# VS Code
+.vscode/
+
+# Eclipse
+.project
+.classpath
+.settings/
+.loadpath
+
+# Swift Package Manager
+.swiftpm/
+Package.resolved
+
+# Others
+.atom/
+.buildlog/
+.history
+.svn/
+.migrate_working_dir/
+
+# --------------------------------------
+# Gradle / Android
+# --------------------------------------
+
+# Gradle cache / build directories
+.gradle/
+build/
+
+# If you redirect build outputs:
+.build/
+build/
+rootProject/build/
+**/build/
+
+# Android Studio generated
+android/app/debug
+android/app/profile
+android/app/release
+
+# Ignore google-services config under app folder
+android/app/google-services.json
+
+# --------------------------------------
+# Flutter / Dart / Pub
+# --------------------------------------
+
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub/
+.pub-cache/
+
+# Symbolication
+app.*.symbols
+
+# Obfuscation
+app.*.map.json
+
+# Documentation output
+**/doc/api/
+**/ios/Flutter/.last_build_id
+
+# --------------------------------------
+# Misc
+# --------------------------------------
+
+# Log files
+*.log
+
+# Compiled Python
+*.pyc
+
+# Class files
+*.class
