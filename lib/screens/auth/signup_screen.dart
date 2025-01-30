@@ -13,6 +13,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _autovalidate = false;
 
@@ -21,6 +22,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _usernameController.dispose();
     super.dispose();
   }
 
@@ -55,6 +57,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    TextFormField(
+                      controller: _usernameController,
+                      decoration: InputDecoration(
+                        labelText: 'Username',
+                      ),
+                      validator: _validateUsername,
+                      onEditingComplete: () =>
+                          setState(() => _autovalidate = true),
+                    ),
+                    SizedBox(height: 8),
                     TextFormField(
                       controller: _emailController,
                       decoration: InputDecoration(
@@ -116,6 +128,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             SignUpRequested(
               _emailController.text,
               _passwordController.text,
+              _usernameController.text,
             ),
           );
     } else {
@@ -154,6 +167,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
     if (value != _passwordController.text) {
       return 'Passwords do not match';
+    }
+    return null;
+  }
+
+  String? _validateUsername(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Username is required';
+    }
+    if (value.length < 3) {
+      return 'Username must be at least 3 characters long';
     }
     return null;
   }

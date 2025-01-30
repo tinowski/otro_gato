@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../widgets/app_drawer.dart';
 import '../screens/dashboard_screen.dart';
+import '../screens/timesheet_screen.dart';
+import '../screens/task_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   @override
@@ -15,7 +17,7 @@ class HomeScreen extends StatelessWidget {
       body: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, state) {
           if (state is Authenticated) {
-            return _buildAuthenticatedContent(context, state.userId);
+            return _buildAuthenticatedContent(context);
           } else if (state is AuthError) {
             return _buildErrorContent(context, state.message);
           } else {
@@ -26,77 +28,75 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAuthenticatedContent(BuildContext context, String userId) {
+  Widget _buildAuthenticatedContent(BuildContext context) {
     return SingleChildScrollView(
       padding: EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Welcome back!',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          SizedBox(height: 20),
-          Text(
-            'User ID: $userId',
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
-          SizedBox(height: 20),
-          Text(
-            'Recent Activity',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          SizedBox(height: 10),
-          Card(
-            child: ListTile(
-              leading: Icon(Icons.notifications),
-              title: Text('New feature available'),
-              subtitle: Text('Check out our latest update'),
-            ),
-          ),
-          SizedBox(height: 20),
-          Text(
             'Quick Actions',
-            style: Theme.of(context).textTheme.titleLarge,
+            style: Theme.of(context).textTheme.headlineSmall,
           ),
-          SizedBox(height: 10),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
+          SizedBox(height: 20),
+          GridView.count(
+            crossAxisCount: 2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
             children: [
-              ElevatedButton.icon(
-                icon: Icon(Icons.add),
-                label: Text('New Task'),
-                onPressed: () {
-                  // TODO: Implement new task functionality
-                },
+              _buildQuickActionCard(
+                context,
+                'Dashboard',
+                Icons.dashboard,
+                () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => DashboardScreen())),
               ),
-              ElevatedButton.icon(
-                icon: Icon(Icons.person),
-                label: Text('Profile'),
-                onPressed: () {
-                  // TODO: Navigate to profile screen
-                },
+              _buildQuickActionCard(
+                context,
+                'Tasks',
+                Icons.list,
+                () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => TaskScreen())),
               ),
-              ElevatedButton.icon(
-                icon: Icon(Icons.settings),
-                label: Text('Settings'),
-                onPressed: () {
-                  // TODO: Navigate to settings screen
-                },
-              ),
-              ElevatedButton.icon(
-                icon: Icon(Icons.dashboard),
-                label: Text('Dashboard'),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => DashboardScreen()),
-                  );
-                },
+              _buildQuickActionCard(
+                context,
+                'Timesheet',
+                Icons.access_time,
+                () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => TimesheetScreen())),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActionCard(
+      BuildContext context, String title, IconData icon, VoidCallback onTap) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 48, color: Theme.of(context).primaryColor),
+              SizedBox(height: 8),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

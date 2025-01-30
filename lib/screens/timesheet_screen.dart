@@ -104,7 +104,22 @@ class _TimesheetScreenState extends State<TimesheetScreen> {
       type == TimeEntryType.clockIn ? 'clockIn' : 'clockOut',
       now,
     );
+
+    if (type == TimeEntryType.clockOut) {
+      // Calculate and store total hours for the day
+      final totalHours = _calculateTotalHours();
+      await _firestoreService.saveTotalHours(_selectedDay!, totalHours);
+    }
+
     _loadEvents(_selectedDay!);
+  }
+
+  double _calculateTotalHours() {
+    if (_clockInTime != null && _clockOutTime != null) {
+      final difference = _clockOutTime!.difference(_clockInTime!);
+      return difference.inMinutes / 60.0;
+    }
+    return 0.0;
   }
 
   bool _isDateSelectable(DateTime day) {

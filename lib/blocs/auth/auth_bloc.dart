@@ -1,25 +1,48 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 part 'auth_event.dart';
 part 'auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   AuthBloc() : super(AuthInitial()) {
     on<LoginRequested>((event, emit) async {
       emit(AuthLoading());
       try {
+        print(
+            'Attempting to sign in with email: ${event.email}'); // Add this line
         UserCredential userCredential = await _auth.signInWithEmailAndPassword(
           email: event.email,
           password: event.password,
         );
-        emit(Authenticated(userCredential.user!.uid));
+
+        print('User signed in: ${userCredential.user?.uid}'); // Add this line
+
+        // Fetch the username from Firestore
+        DocumentSnapshot userDoc = await _firestore
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .get();
+
+        if (!userDoc.exists) {
+          throw Exception('User document not found in Firestore');
+        }
+
+        String username = userDoc.get('username') as String;
+        print('Username fetched: $username'); // Add this line
+
+        emit(Authenticated(userCredential.user!.uid, username));
       } on FirebaseAuthException catch (e) {
+        print(
+            'FirebaseAuthException: ${e.code} - ${e.message}'); // Add this line
         emit(AuthError(_getErrorMessage(e)));
       } catch (e) {
+        print('Unexpected error: $e'); // Add this line
         emit(AuthError('An unexpected error occurred. Please try again.'));
       }
     });
@@ -32,7 +55,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           email: event.email,
           password: event.password,
         );
-        emit(Authenticated(userCredential.user!.uid));
+
+        // Save the username to Firestore
+        await _firestore.collection('users').doc(userCredential.user!.uid).set({
+          'username': event.username,
+          'email': event.email,
+        });
+
+        emit(Authenticated(userCredential.user!.uid, event.username));
       } on FirebaseAuthException catch (e) {
         emit(AuthError(_getErrorMessage(e)));
       } catch (e) {

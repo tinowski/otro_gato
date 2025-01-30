@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:otro_gato/screens/task_screen.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/home_screen.dart';
@@ -40,6 +41,15 @@ class AppDrawer extends StatelessWidget {
             onTap: () {
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(builder: (_) => DashboardScreen()),
+              );
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.task),
+            title: Text('Tasks'),
+            onTap: () {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => TaskScreen()),
               );
             },
           ),
