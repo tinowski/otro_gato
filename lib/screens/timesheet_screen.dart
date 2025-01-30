@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
+import '../widgets/app_drawer.dart';
 
 class TimesheetScreen extends StatefulWidget {
   @override
@@ -102,12 +103,9 @@ class _TimesheetScreenState extends State<TimesheetScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
         title: Text('Timesheet'),
       ),
+      drawer: AppDrawer(),
       body: Column(
         children: [
           TableCalendar(
