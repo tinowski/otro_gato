@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/home_screen.dart';
+import '../screens/dashboard_screen.dart';
+import '../screens/timesheet_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   @override
@@ -33,6 +35,24 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           ListTile(
+            leading: Icon(Icons.dashboard),
+            title: Text('Dashboard'),
+            onTap: () {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => DashboardScreen()),
+              );
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.calendar_today),
+            title: Text('Timesheet'),
+            onTap: () {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => TimesheetScreen()),
+              );
+            },
+          ),
+          ListTile(
             leading: Icon(Icons.exit_to_app),
             title: Text('Logout'),
             onTap: () {
@@ -43,7 +63,6 @@ class AppDrawer extends StatelessWidget {
               );
             },
           ),
-          // Add more menu items as needed
         ],
       ),
     );

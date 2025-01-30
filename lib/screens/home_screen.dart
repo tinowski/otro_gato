@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../widgets/app_drawer.dart';
+import '../screens/dashboard_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   @override
@@ -33,12 +34,12 @@ class HomeScreen extends StatelessWidget {
         children: [
           Text(
             'Welcome back!',
-            style: Theme.of(context).textTheme.titleMedium,
+            style: Theme.of(context).textTheme.headlineMedium,
           ),
           SizedBox(height: 20),
           Text(
             'User ID: $userId',
-            style: Theme.of(context).textTheme.titleSmall,
+            style: Theme.of(context).textTheme.bodyLarge,
           ),
           SizedBox(height: 20),
           Text(
@@ -84,6 +85,15 @@ class HomeScreen extends StatelessWidget {
                   // TODO: Navigate to settings screen
                 },
               ),
+              ElevatedButton.icon(
+                icon: Icon(Icons.dashboard),
+                label: Text('Dashboard'),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => DashboardScreen()),
+                  );
+                },
+              ),
             ],
           ),
         ],
@@ -105,7 +115,7 @@ class HomeScreen extends StatelessWidget {
           SizedBox(height: 8),
           Text(
             errorMessage,
-            style: Theme.of(context).textTheme.titleMedium,
+            style: Theme.of(context).textTheme.bodyLarge,
             textAlign: TextAlign.center,
           ),
           SizedBox(height: 16),
